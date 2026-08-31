@@ -12,7 +12,7 @@ saves it into Postgres. See `POST /weather` and `GET /weather` below.
   production; locally, the [Cloud SQL Auth Proxy](https://cloud.google.com/sql/docs/postgres/sql-proxy)
   opens the same kind of tunnel over a local TCP port. Same `psycopg2.connect(...)`
   call either way — see `database.py`.
-- **CI/CD**: via Cloud Build, triggered from this GitHub repo
+- **CI/CD**: Cloud Build, triggered from this GitHub repo
 
 ## Prerequisites
 
