@@ -1,6 +1,6 @@
 # Quantaco Assessment
 
-Take-home technical assessment, submitted as two independent parts.
+Technical assessment
 
 ## [assessment1/](assessment1/) — API processing
 
