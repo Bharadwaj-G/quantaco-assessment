@@ -4,7 +4,7 @@ substitutions:
   _AR_REPO: quantaco-weather-api
   _INSTANCE_CONNECTION_NAME: primeval-span-307214:us-central1:weather-db
   _DB_USER: testuser
-  _DB_NAME: weather-db
+  _DB_NAME: quantaco-weather-db
   _RUNTIME_SA: weather-api-sa@primeval-span-307214.iam.gserviceaccount.com
   _DB_PASS_SECRET: weather-db-password
 
@@ -37,3 +37,6 @@ steps:
 
 images:
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_NAME}:$SHORT_SHA
+
+options:
+  logging: CLOUD_LOGGING_ONLY
