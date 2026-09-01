@@ -3,11 +3,14 @@
 Docs: https://open-meteo.com/en/docs/historical-forecast-api
 """
 
+import logging
 from datetime import date
 
 import requests
 
 from schemas import AppError
+
+logger = logging.getLogger(__name__)
 
 BASE_URL = "https://historical-forecast-api.open-meteo.com/v1/forecast"
 REQUEST_TIMEOUT_SECONDS = 30
@@ -49,14 +52,17 @@ def fetch_hourly_weather(
         response.raise_for_status()
         payload = response.json()
     except requests.RequestException as exc:
-        raise AppError(502, "WEATHER_API_ERROR", f"Open-Meteo request failed: {exc}") from exc
+        logger.exception("Open-Meteo request failed (lat=%s, lon=%s)", latitude, longitude)
+        raise AppError(502, "WEATHER_API_ERROR", "Failed to reach the weather data provider") from exc
     except ValueError as exc:
-        raise AppError(502, "WEATHER_API_ERROR", "Open-Meteo returned a non-JSON response") from exc
+        logger.exception("Open-Meteo returned a non-JSON response (lat=%s, lon=%s)", latitude, longitude)
+        raise AppError(502, "WEATHER_API_ERROR", "Weather data provider returned an unexpected response") from exc
 
     hourly = payload.get("hourly")
     times = hourly.get("time") if hourly else None
     if not hourly or not times:
-        raise AppError(502, "WEATHER_API_ERROR", "Open-Meteo response missing hourly data")
+        logger.error("Open-Meteo response missing hourly data: %r", payload)
+        raise AppError(502, "WEATHER_API_ERROR", "Weather data provider returned an unexpected response")
 
     records = []
     for i, timestamp in enumerate(times):

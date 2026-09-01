@@ -1,5 +1,6 @@
 """POST /weather, GET /weather — route defs + request-level validation."""
 
+import logging
 from datetime import date
 
 import psycopg2
@@ -16,6 +17,8 @@ from schemas import (
     WeatherSuccessResponse,
     MAX_RANGE_DAYS,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["weather"])
 
@@ -54,8 +57,13 @@ def post_weather(request: WeatherRequest, conn=Depends(get_db)) -> WeatherSucces
         records_saved = crud.upsert_weather_records(conn, request.venue_id, records)
     except psycopg2.Error as exc:
         conn.rollback()
-        raise AppError(500, "DATABASE_ERROR", f"Failed to save weather data: {exc}") from exc
+        logger.exception("Failed to save weather data for venue_id=%s", request.venue_id)
+        raise AppError(500, "DATABASE_ERROR", "Failed to save weather data") from exc
 
+    logger.info(
+        "Saved %d weather records for venue_id=%s (%s to %s)",
+        records_saved, request.venue_id, request.start_date, request.end_date,
+    )
     return WeatherSuccessResponse(
         venue_id=request.venue_id,
         start_date=request.start_date,
@@ -77,7 +85,8 @@ def get_weather(
     try:
         rows = crud.get_weather_records(conn, venue_id, start_date, end_date)
     except psycopg2.Error as exc:
-        raise AppError(500, "DATABASE_ERROR", f"Failed to read weather data: {exc}") from exc
+        logger.exception("Failed to read weather data for venue_id=%s", venue_id)
+        raise AppError(500, "DATABASE_ERROR", "Failed to read weather data") from exc
 
     records = [WeatherRecord(**{**row, "datetime": str(row["datetime"])}) for row in rows]
     return WeatherListResponse(
