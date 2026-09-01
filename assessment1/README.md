@@ -1,9 +1,52 @@
 # Quantaco Weather API
 
 Fetches hourly historical weather (Open-Meteo) for a venue over a date range and
-saves it into Postgres. See `POST /weather` and `GET /weather` below.
+saves it into Postgres. See `POST /weather` below.
+
+## Live demo
+
+Deployed on Cloud Run: **https://weather-api-71027124069.us-central1.run.app**
+
+No setup needed to test it — it's a public endpoint. Interactive docs (Swagger UI):
+https://weather-api-71027124069.us-central1.run.app/docs
+
+```bash
+curl -X POST https://weather-api-71027124069.us-central1.run.app/weather \
+  -H "Content-Type: application/json" \
+  -d '{"venue_id": 1, "start_date": "2024-01-01", "end_date": "2024-01-07"}'
+```
+
+The sections below cover running it locally instead, if preferred.
 
 ## Architecture
+
+Two independent paths through the same Cloud Run service: a deploy triggered by a git
+push (dashed), and a live API request (solid). They share only the running container
+and its `weather-api-sa` identity.
+
+```mermaid
+flowchart TB
+    GH[GitHub<br/>quantaco-assessment]
+    CB[Cloud Build<br/>weather-api-service-trigger]
+    AR[Artifact Registry<br/>quantaco-weather-api]
+    CR[Cloud Run<br/>weather-api - FastAPI]
+    Client[Client<br/>curl / Postman / Swagger]
+    SQL[(Cloud SQL<br/>weather-db)]
+    SM[Secret Manager<br/>weather-db-password]
+    OM[Open-Meteo API<br/>third-party]
+
+    GH -.->|push to main| CB
+    CB -.->|build + push image| AR
+    CB -.->|deploy as weather-api-sa| CR
+
+    Client -->|POST /weather| CR
+    CR -->|query venue / upsert weather| SQL
+    CR -->|fetch hourly weather| OM
+    SM -.->|DB_PASS at startup| CR
+
+    classDef hub stroke-width:3px;
+    class CR hub;
+```
 
 - **Runtime**: Cloud Run (containerized FastAPI, sync)
 - **Database**: Cloud SQL for PostgreSQL, raw SQL via `psycopg2` (no ORM)
@@ -65,9 +108,9 @@ saves it into Postgres. See `POST /weather` and `GET /weather` below.
    ```
    Expected: `200` with `{"status": "success", "records_saved": 168, ...}`
 
-   Verify saved rows:
-   ```bash
-   curl "http://localhost:8000/weather?venue_id=1&start_date=2024-01-01&end_date=2024-01-07"
+   Verify saved rows directly in the database (e.g. via Cloud SQL Studio or `psql`):
+   ```sql
+   SELECT * FROM weather WHERE venue_id = 1 ORDER BY datetime LIMIT 5;
    ```
 
    Error cases:
@@ -90,8 +133,33 @@ saves it into Postgres. See `POST /weather` and `GET /weather` below.
 
 ## GCP setup
 
-_To be filled in as the Cloud SQL instance / Cloud Run service / Cloud Build trigger
-are provisioned via the Console._
+All provisioned via the Console (no `gcloud` CLI used):
+
+| Resource | Value |
+|---|---|
+| Project | `primeval-span-307214` |
+| Region | `us-central1` |
+| Cloud SQL instance | `weather-db` (PostgreSQL) — connection name `primeval-span-307214:us-central1:weather-db` |
+| Database | `quantaco-weather-db` |
+| DB user | `testuser` |
+| Service account | `weather-api-sa` — roles: Cloud SQL Client, Cloud Run Admin, Artifact Registry Writer, Secret Manager Secret Accessor, Service Account User (on itself). Used as both the Cloud Build execution identity and the Cloud Run runtime identity. |
+| Secret Manager | `weather-db-password` — the DB password, referenced by Cloud Run at runtime via `--set-secrets`, never in code or env vars |
+| Artifact Registry | `quantaco-weather-api` (Docker repo) — holds built images |
+| Cloud Run service | `weather-api` — public (`--allow-unauthenticated`), connected to Cloud SQL via `--add-cloudsql-instances` (Unix socket, no Auth Proxy needed in production) |
+| Cloud Build trigger | `weather-api-service-trigger` — 1st-gen GitHub App connection to this repo, push to `main`, runs `assessment1/cloudbuild.yaml` |
+
+Pipeline: a push to `main` → Cloud Build builds the Docker image from `assessment1/Dockerfile`
+→ pushes it to Artifact Registry → deploys it to Cloud Run, all defined in `cloudbuild.yaml`.
+
+## OpenAPI spec
+
+`openapi.json` is the exported spec (OpenAPI 3.1, FastAPI's native output). Regenerate it
+after any API change with:
+```bash
+python export_openapi.py
+```
+It's also always available live at `/openapi.json` on either the local server or the
+deployed URL above, and as interactive docs at `/docs`.
 
 ## Running with Docker
 
@@ -102,7 +170,3 @@ docker run --env-file .env -p 8080:8080 quantaco-weather-api
 (Requires the Auth Proxy reachable from inside the container — for local Docker
 testing, run the proxy with `--address 0.0.0.0` and point `DB_HOST` at your host
 machine's address, e.g. `host.docker.internal` on Windows/Mac.)
-
-## SQL QA checks
-
-See `sql/qa_checks.sql`.

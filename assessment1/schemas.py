@@ -30,29 +30,6 @@ class WeatherSuccessResponse(BaseModel):
     message: str = "Weather data saved successfully"
 
 
-class WeatherRecord(BaseModel):
-    datetime: str
-    temperature_2m: float | None = None
-    relative_humidity_2m: float | None = None
-    dewpoint_2m: float | None = None
-    apparent_temperature: float | None = None
-    precipitation_probability: float | None = None
-    precipitation: float | None = None
-    rain: float | None = None
-    showers: float | None = None
-    snowfall: float | None = None
-    snow_depth: float | None = None
-
-
-class WeatherListResponse(BaseModel):
-    status: str = "success"
-    venue_id: int
-    start_date: date
-    end_date: date
-    count: int
-    records: list[WeatherRecord]
-
-
 class ErrorResponse(BaseModel):
     status: str = "error"
     error_code: str

@@ -1,22 +1,15 @@
-"""POST /weather, GET /weather — route defs + request-level validation."""
+"""POST /weather — route def + request-level validation."""
 
 import logging
 from datetime import date
 
 import psycopg2
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 
 import crud
 from database import get_db
 from integrations.open_meteo import fetch_hourly_weather
-from schemas import (
-    AppError,
-    WeatherListResponse,
-    WeatherRecord,
-    WeatherRequest,
-    WeatherSuccessResponse,
-    MAX_RANGE_DAYS,
-)
+from schemas import AppError, WeatherRequest, WeatherSuccessResponse, MAX_RANGE_DAYS
 
 logger = logging.getLogger(__name__)
 
@@ -69,30 +62,4 @@ def post_weather(request: WeatherRequest, conn=Depends(get_db)) -> WeatherSucces
         start_date=request.start_date,
         end_date=request.end_date,
         records_saved=records_saved,
-    )
-
-
-@router.get("/weather", response_model=WeatherListResponse)
-def get_weather(
-    venue_id: int = Query(...),
-    start_date: date = Query(...),
-    end_date: date = Query(...),
-    conn=Depends(get_db),
-) -> WeatherListResponse:
-    _validate_date_range(start_date, end_date)
-    _get_venue_or_404(conn, venue_id)
-
-    try:
-        rows = crud.get_weather_records(conn, venue_id, start_date, end_date)
-    except psycopg2.Error as exc:
-        logger.exception("Failed to read weather data for venue_id=%s", venue_id)
-        raise AppError(500, "DATABASE_ERROR", "Failed to read weather data") from exc
-
-    records = [WeatherRecord(**{**row, "datetime": str(row["datetime"])}) for row in rows]
-    return WeatherListResponse(
-        venue_id=venue_id,
-        start_date=start_date,
-        end_date=end_date,
-        count=len(records),
-        records=records,
     )

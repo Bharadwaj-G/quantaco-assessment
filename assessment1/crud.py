@@ -1,7 +1,5 @@
 """Raw SQL queries. Schema is defined in sql/schema.sql (no ORM)."""
 
-from datetime import date, timedelta
-
 import psycopg2.extensions
 from psycopg2.extras import RealDictCursor, execute_values
 
@@ -61,25 +59,3 @@ def upsert_weather_records(
         execute_values(cur, _UPSERT_SQL, values)
     conn.commit()
     return len(records)
-
-
-def get_weather_records(
-    conn: psycopg2.extensions.connection,
-    venue_id: int,
-    start_date: date,
-    end_date: date,
-) -> list[dict]:
-    # end_date is a calendar date; datetime is hourly, so the upper bound
-    # must be exclusive of the day *after* end_date to include its hours.
-    end_exclusive = end_date + timedelta(days=1)
-    with conn.cursor(cursor_factory=RealDictCursor) as cur:
-        cur.execute(
-            f"""
-            SELECT datetime, {", ".join(WEATHER_METRIC_COLUMNS)}
-            FROM weather
-            WHERE venue_id = %s AND datetime >= %s AND datetime < %s
-            ORDER BY datetime
-            """,
-            (venue_id, start_date, end_exclusive),
-        )
-        return [dict(row) for row in cur.fetchall()]
