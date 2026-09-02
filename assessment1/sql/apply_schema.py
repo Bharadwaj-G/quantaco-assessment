@@ -1,6 +1,6 @@
 """Apply schema.sql and seed.sql to the DB pointed at by env vars / .env.
 
-Run once against a fresh instance (via the Cloud SQL Auth Proxy locally):
+Run once against a fresh instance (e.g. a local Postgres for development):
     python sql/apply_schema.py
 """
 
