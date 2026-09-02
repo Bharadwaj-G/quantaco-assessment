@@ -161,6 +161,23 @@ python export_openapi.py
 It's also always available live at `/openapi.json` on either the local server or the
 deployed URL above, and as interactive docs at `/docs`.
 
+## SQL QA checks
+
+`sql/qa_checks.sql` audits the `weather` table on the dimensions/metrics that actually
+matter to a frontend consuming it. Run it via Cloud SQL Studio (or `psql`) — each `SELECT`
+returns the rows violating one check, so an empty result set means that check passes.
+Verified against the live Cloud SQL instance: **0 rows returned**, all checks pass.
+
+| Check | What | Why |
+|---|---|---|
+| `relative_humidity_2m` range | Must be 0–100 (or null) | Relative humidity is a percentage by definition (ratio of actual to saturation vapor pressure) — any value outside 0–100 is physically meaningless, regardless of data source |
+| `precipitation_probability` range | Must be 0–100 (or null) | Same reasoning — it's documented as a percentage. Null is allowed |
+| `precipitation` / `rain` / `showers` / `snowfall` / `snow_depth` non-negative | Must be ≥ 0 (or null) | These are physical quantities (mm of water/snow) — a negative amount is meaningless |
+| Cross-field consistency | `precipitation ≈ rain + showers + snowfall / 7` | Precipitation is defined as *"rain + showers + snow"*. The `/7` matters: per Open-Meteo's docs, `snowfall` is in **cm** while `precipitation`/`rain`/`showers` are in **mm** — dividing by 7 converts snowfall to its water-equivalent in mm before summing. Missing this unit mismatch would make the check fail on every hour with real snowfall |
+| No duplicate `(venue_id, datetime)` | Each hour, once per venue | Already enforced by the `UNIQUE(venue_id, datetime)` constraint (which is also what makes the upsert idempotent) — this check reproves it independently in SQL rather than only trusting the constraint blindly |
+| No orphaned `venue_id` | Every `weather.venue_id` must exist in `venue` | Already enforced by the `FOREIGN KEY` constraint — same reasoning|
+
+
 ## Running with Docker
 
 ```bash

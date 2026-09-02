@@ -26,5 +26,3 @@ CREATE TABLE IF NOT EXISTS weather (
     updated_at                  TIMESTAMP NOT NULL DEFAULT now(),
     CONSTRAINT uq_weather_venue_datetime UNIQUE (venue_id, datetime)
 );
-
-CREATE INDEX IF NOT EXISTS idx_weather_venue_datetime ON weather (venue_id, datetime);
