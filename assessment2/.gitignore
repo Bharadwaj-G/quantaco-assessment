@@ -1,0 +1,10 @@
+# Generated output - regenerable by running json_to_chunks.py, never committed
+chunks/
+stats.json
+output.json
+
+# Local source file copies, if ever placed here instead of Downloads
+Venue*.json
+
+venv/
+__pycache__/
