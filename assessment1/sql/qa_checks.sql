@@ -1,8 +1,7 @@
 -- QA checks on the weather table, for output consistency to frontend consumers.
 -- Each SELECT returns violating rows; an empty result set means that check passes.
 
--- 1. Range checks: percentages must be 0-100 (or null - Open-Meteo can omit a
---    field for a given hour), physical quantities can't be negative.
+-- 1. Range checks: percentages must be 0-100 (or null), physical quantities can't be negative.
 SELECT id, venue_id, datetime, 'relative_humidity_2m out of range' AS violation
 FROM weather
 WHERE relative_humidity_2m IS NOT NULL
@@ -41,8 +40,7 @@ WHERE snow_depth IS NOT NULL AND snow_depth < 0
 
 -- 2. Cross-field consistency: precipitation = rain + showers + snowfall
 --    (snowfall is in cm, everything else here is in mm - divide by 7 for its
---    water-equivalent in mm, per Open-Meteo's docs). Small tolerance for
---    floating-point rounding.
+--    water-equivalent in mm, per Open-Meteo's docs).
 UNION ALL
 SELECT id, venue_id, datetime, 'precipitation != rain + showers + snowfall/7'
 FROM weather
@@ -52,8 +50,7 @@ WHERE precipitation IS NOT NULL
   AND snowfall IS NOT NULL
   AND ABS(precipitation - (rain + showers + snowfall / 7.0)) > 0.1
 
--- 3. No duplicate (venue_id, datetime) pairs (belt-and-suspenders on top of
---    the UNIQUE constraint - proves it independently rather than trusting it blindly).
+-- 3. No duplicate (venue_id, datetime) pairs
 UNION ALL
 SELECT MIN(id), venue_id, datetime, 'duplicate venue_id + datetime'
 FROM weather
@@ -61,7 +58,7 @@ GROUP BY venue_id, datetime
 HAVING COUNT(*) > 1
 
 -- 4. Referential integrity: every weather.venue_id must exist in venue
---    (belt-and-suspenders on top of the FK constraint, same reasoning as above).
+--    (on top of the FK constraint).
 UNION ALL
 SELECT w.id, w.venue_id, w.datetime, 'venue_id not found in venue table'
 FROM weather w

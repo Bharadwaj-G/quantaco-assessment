@@ -40,12 +40,8 @@ def get_venue(conn: psycopg2.extensions.connection, venue_id: int) -> dict | Non
 def upsert_weather_records(
     conn: psycopg2.extensions.connection, venue_id: int, records: list[dict]
 ) -> int:
-    """Upsert one row per hourly record. Returns the number of records applied.
-
-    Each input record maps 1:1 to an inserted or updated row (never both),
-    so len(records) is the accurate "records_saved" count — no need to trust
-    cursor.rowcount, which only reflects the last page under execute_values'
-    internal batching.
+    """
+    Upsert one row per hourly record. Returns the number of records applied.
     """
     if not records:
         return 0

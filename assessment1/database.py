@@ -1,16 +1,12 @@
 """Plain psycopg2 connections to Postgres.
 
-Two ways in, same driver, no Cloud SQL client library needed:
+Two ways in which the Postgres connection is configured:
   - On Cloud Run: deploying with --add-cloudsql-instances=INSTANCE_CONNECTION_NAME
     mounts a Unix domain socket at /cloudsql/INSTANCE_CONNECTION_NAME. Set
-    INSTANCE_UNIX_SOCKET to that path and psycopg2 connects to it directly —
-    no IP allowlisting, auth is via the Cloud Run service account's IAM role.
+    INSTANCE_UNIX_SOCKET to that path and psycopg2 connects to it directly
   - Locally: point DB_HOST/DB_PORT at any reachable Postgres (e.g. a local
-    Docker container). Same psycopg2 code path either way — only the
-    connection target changes.
+    Docker container).
 
-Required env vars: DB_USER, DB_PASS, DB_NAME, plus either
-INSTANCE_UNIX_SOCKET (Cloud Run) or DB_HOST + DB_PORT (local).
 """
 
 import os

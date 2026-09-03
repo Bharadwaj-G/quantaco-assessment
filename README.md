@@ -2,13 +2,28 @@
 
 Technical assessment
 
-## [assessment1/](assessment1/) — API processing
+## [assessment1/](assessment1/) -- API processing
 
-A FastAPI service that fetches hourly historical weather data from Open-Meteo for a
-venue over a date range and saves it into Cloud SQL (PostgreSQL), deployed on GCP
-Cloud Run. See [assessment1/README.md](assessment1/README.md).
+**Problem:** *"Create an API stack to facilitate a pipeline to fetch Weather data from
+an external API, process the data and insert it into a Database using a cloud provider
+of your choice."*
 
-## [assessment2/](assessment2/) — Large file processing
+**Solution:** A FastAPI service, deployed on GCP Cloud Run, that accepts a venue and
+date range, fetches hourly historical weather from Open-Meteo, and upserts it into
+Cloud SQL (PostgreSQL) -- with automated CI/CD (GitHub → Cloud Build → Cloud Run),
+an OpenAPI spec, and SQL QA checks on the output data.
 
-Streams a large, deeply-nested JSON file (~4GB) into multiple smaller chunks
-without loading it fully into memory. See [assessment2/README.md](assessment2/README.md).
+See [assessment1/README.md](assessment1/README.md) for the live demo link, architecture,
+setup, and full details.
+
+## [assessment2/](assessment2/) -- Large file processing
+
+**Problem:** *"Please chunk the nested JSON large data file (100 MB) so that the file
+chunks can then be processed and loaded in a fast way."*
+
+**Solution:** A Python script that streams a large, deeply-nested JSON file (the real
+file provided is ~4GB) one record at a time via `ijson`, writing each into its own
+independent, valid JSON chunk -- without ever loading the full file into memory.
+
+See [assessment2/README.md](assessment2/README.md) for the approach, verified results,
+and full details.
