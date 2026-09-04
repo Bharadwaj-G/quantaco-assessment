@@ -1,5 +1,5 @@
 -- Quantaco Weather API — schema
--- Source of truth for the venue/weather tables (no ORM; raw SQL).
+-- Source of truth for the venue/weather tables
 
 CREATE TABLE IF NOT EXISTS venue (
     id        INTEGER PRIMARY KEY,

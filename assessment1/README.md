@@ -1,7 +1,7 @@
 # Quantaco Weather API
 
 Fetches hourly historical weather (Open-Meteo) for a venue over a date range and
-saves it into Postgres. See `POST /weather` below.
+saves it into Postgres.
 
 ## Live Demo
 
@@ -10,6 +10,7 @@ Deployed on Cloud Run: **https://weather-api-71027124069.us-central1.run.app**
 No setup needed to test it -- it's a public endpoint. Can directly test through Interactive docs (Swagger UI):
 https://weather-api-71027124069.us-central1.run.app/docs
 
+Send a request to the `\weather` endpoint to test the flow.
 ```cmd
 curl -X POST https://weather-api-71027124069.us-central1.run.app/weather -H "Content-Type: application/json" -d "{\"venue_id\": 1, \"start_date\": \"2024-01-01\", \"end_date\": \"2024-01-07\"}"
 ```
@@ -55,6 +56,31 @@ flowchart TB
 - Python 3.11+
 - Docker (or any local PostgreSQL instance), for local development only --
   not needed to test the live deployment above
+
+## Folder structure
+
+```
+assessment1/
+├── main.py               # FastAPI app, exception handlers
+├── schemas.py             # Pydantic request/response models, AppError
+├── database.py            # databse connection
+├── crud.py                # get_venue, upsert_weather_records
+├── routers/
+│   └── weather.py         # POST /weather route
+├── integrations/
+│   └── open_meteo.py      # Open-Meteo API client
+├── sql/
+│   ├── schema.sql         # venue + weather tables
+│   ├── seed.sql           # sample venue rows
+│   ├── qa_checks.sql      # data quality audit queries
+│   └── apply_schema.py    # runs schema.sql + seed.sql against DB_* env
+├── export_openapi.py      # exports the live OpenAPI spec to openapi.json
+├── openapi.json           # exported spec 
+├── Dockerfile
+├── cloudbuild.yaml        # Cloud Build: build -> push -> deploy to Cloud Run
+├── requirements.txt
+└── .env.example
+```
 
 ## Local development
 
