@@ -9,11 +9,16 @@ Two ways in which the Postgres connection is configured:
 
 """
 
+import logging
 import os
 from collections.abc import Generator
 
 import psycopg2
 import psycopg2.extensions
+
+from schemas import AppError
+
+logger = logging.getLogger(__name__)
 
 
 def get_connection() -> psycopg2.extensions.connection:
@@ -36,7 +41,12 @@ def get_connection() -> psycopg2.extensions.connection:
 
 def get_db() -> Generator[psycopg2.extensions.connection, None, None]:
     """FastAPI dependency — one connection per request, closed after."""
-    conn = get_connection()
+    try:
+        conn = get_connection()
+    except psycopg2.Error as exc:
+        logger.exception("Failed to connect to the database")
+        raise AppError(500, "DATABASE_ERROR", "Failed to connect to the database") from exc
+
     try:
         yield conn
     finally:

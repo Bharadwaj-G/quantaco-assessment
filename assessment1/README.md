@@ -15,6 +15,19 @@ Send a request to the `\weather` endpoint to test the flow.
 curl -X POST https://weather-api-71027124069.us-central1.run.app/weather -H "Content-Type: application/json" -d "{\"venue_id\": 1, \"start_date\": \"2024-01-01\", \"end_date\": \"2024-01-07\"}"
 ```
 
+**In Postman:**
+
+| Field | Value |
+|---|---|
+| Method | `POST` |
+| URL | `https://weather-api-71027124069.us-central1.run.app/weather` |
+| Headers | `Content-Type: application/json` |
+| Body (raw, JSON) | `{"venue_id": 1, "start_date": "2024-01-01", "end_date": "2024-01-07"}` |
+
+Expected: `200` with `{"status": "success", "records_saved": 168, ...}`. Or skip manual setup
+entirely and import the OpenAPI spec (`openapi.json` in this folder, or live at
+`/openapi.json`) into Postman -- it generates this same request for you.
+
 ## Architecture
 
 Two independent paths through the same Cloud Run service: a deploy triggered by a git
@@ -145,6 +158,20 @@ This is only for development and local testing, using a disposable local Postgre
 
    Or import the OpenAPI spec (auto-generated at `http://localhost:8000/openapi.json`,
    interactive docs at `http://localhost:8000/docs`) into Postman directly.
+
+## Response codes
+
+| Status | error_code | When |
+|---|---|---|
+| 200 | -- | Success |
+| 400 | `INVALID_DATE_RANGE` | `start_date` after `end_date`, or range exceeds `MAX_RANGE_DAYS` |
+| 404 | `VENUE_NOT_FOUND` | `venue_id` doesn't exist |
+| 422 | `VALIDATION_ERROR` | Request body fails validation (missing/malformed field) |
+| 500 | `DATABASE_ERROR` | Upsert failed (Postgres error) |
+| 500 | `INTERNAL_ERROR` | Any other unhandled exception |
+| 502 | `WEATHER_API_ERROR` | Open-Meteo request failed or returned an unexpected shape |
+
+Error responses share one shape: `{"error_code": "...", "message": "..."}`.
 
 ## GCP setup
 
