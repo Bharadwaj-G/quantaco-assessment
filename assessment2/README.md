@@ -1,7 +1,6 @@
 # Large JSON File Chunking
 
-Splits a large, deeply-nested JSON file into smaller, independently-loadable chunks -
-without ever loading the full file into memory.
+Splits a large, deeply-nested JSON file into smaller, independently-loadable chunks without ever loading the full file into memory.
 
 ## The problem
 
