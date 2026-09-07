@@ -10,7 +10,7 @@ of your choice."*
 
 **Solution:** A FastAPI service, deployed on GCP Cloud Run, that accepts a venue and
 date range, fetches hourly historical weather from Open-Meteo, and upserts it into
-Cloud SQL (PostgreSQL) -- with automated CI/CD (GitHub → Cloud Build → Cloud Run),
+Cloud SQL (PostgreSQL) with automated CI/CD (GitHub → Cloud Build → Cloud Run),
 an OpenAPI spec, and SQL QA checks on the output data.
 
 See [assessment1/README.md](assessment1/README.md) for the live demo link, architecture,
@@ -23,7 +23,7 @@ chunks can then be processed and loaded in a fast way."*
 
 **Solution:** A Python script that streams a large, deeply-nested JSON file (the real
 file provided is ~4GB) one record at a time via `ijson`, writing each into its own
-independent, valid JSON chunk -- without ever loading the full file into memory.
+independent, valid JSON chunk without ever loading the full file into memory.
 
 See [assessment2/README.md](assessment2/README.md) for the approach, verified results,
 and full details.
