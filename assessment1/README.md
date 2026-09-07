@@ -7,7 +7,7 @@ saves it into Postgres.
 
 Deployed on Cloud Run: **https://weather-api-71027124069.us-central1.run.app**
 
-No setup needed to test it -- it's a public endpoint. Can directly test through Interactive docs (Swagger UI):
+No setup needed to test it - it's a public endpoint. Can directly test through Interactive docs (Swagger UI):
 https://weather-api-71027124069.us-central1.run.app/docs
 
 Send a request to the `\weather` endpoint to test the flow.
@@ -47,14 +47,14 @@ flowchart TB
 
 - **Runtime**: Cloud Run (containerized FastAPI, sync)
 - **Database**: Cloud SQL for PostgreSQL, raw SQL via `psycopg2` (no ORM)
-- **DB connectivity**: no client library needed -- Cloud Run's built-in
-  `--add-cloudsql-instances` flag mounts a Unix socket to the instance.
+- **DB connectivity**: no client library needed - Cloud Run's built-in
+  `-add-cloudsql-instances` flag mounts a Unix socket to the instance.
 - **CI/CD**: Cloud Build, triggered from this GitHub repo
 
 ## Prerequisites
 
 - Python 3.11+
-- Docker (or any local PostgreSQL instance), for local development only --
+- Docker (or any local PostgreSQL instance), for local development only -
   not needed to test the live deployment above
 
 ## Folder structure
@@ -93,7 +93,7 @@ This is only for development and local testing, using a disposable local Postgre
    pip install -r requirements.txt
    ```
 
-2. **Start Docker Desktop** (if using the Docker option below -- skip if you already
+2. **Start Docker Desktop** (if using the Docker option below - skip if you already
    have a local Postgres running some other way)
 
 3. **Start a local Postgres** (any local instance works; example via Docker)
@@ -157,11 +157,11 @@ All provisioned via the Console:
 | Cloud SQL instance | `weather-db` (PostgreSQL) -- connection name `primeval-span-307214:us-central1:weather-db` |
 | Database | `quantaco-weather-db` |
 | DB user | `testuser` |
-| Service account | `weather-api-sa` -- roles: Cloud SQL Client, Cloud Run Admin, Artifact Registry Writer, Secret Manager Secret Accessor, Service Account User (on itself). Used as both the Cloud Build execution identity and the Cloud Run runtime identity. |
-| Secret Manager | `weather-db-password` -- the DB password, referenced by Cloud Run at runtime via `--set-secrets`, never in code or env vars |
-| Artifact Registry | `quantaco-weather-api` (Docker repo) -- holds built images |
-| Cloud Run service | `weather-api` -- public (`--allow-unauthenticated`), connected to Cloud SQL via `--add-cloudsql-instances` (Unix socket, no Auth Proxy needed in production) |
-| Cloud Build trigger | `weather-api-service-trigger` -- GitHub App connection to this repo, push to `main`, runs `assessment1/cloudbuild.yaml` |
+| Service account | `weather-api-sa` - roles: Cloud SQL Client, Cloud Run Admin, Artifact Registry Writer, Secret Manager Secret Accessor, Service Account User (on itself). Used as both the Cloud Build execution identity and the Cloud Run runtime identity. |
+| Secret Manager | `weather-db-password` - the DB password, referenced by Cloud Run at runtime via `--set-secrets`, never in code or env vars |
+| Artifact Registry | `quantaco-weather-api` (Docker repo) - holds built images |
+| Cloud Run service | `weather-api` - public (`--allow-unauthenticated`), connected to Cloud SQL via `--add-cloudsql-instances` (Unix socket, no Auth Proxy needed in production) |
+| Cloud Build trigger | `weather-api-service-trigger` - GitHub App connection to this repo, push to `main`, runs `assessment1/cloudbuild.yaml` |
 
 Pipeline: a push to `main` → Cloud Build builds the Docker image from `assessment1/Dockerfile`
 → pushes it to Artifact Registry → deploys it to Cloud Run, all defined in `cloudbuild.yaml`.
@@ -179,16 +179,16 @@ deployed URL above, and as interactive docs at `/docs`.
 ## SQL QA checks
 
 `sql/qa_checks.sql` audits the `weather` table on the dimensions/metrics that actually
-matter to a frontend consuming it. Run it via Cloud SQL Studio (or `psql`) -- each `SELECT`
+matter to a frontend consuming it. Run it via Cloud SQL Studio (or `psql`) - each `SELECT`
 returns the rows violating one check, so an empty result set means that check passes.
 Verified against the live Cloud SQL instance: **0 rows returned**, all checks pass.
 
 | Check | What | Why |
 |---|---|---|
-| `relative_humidity_2m` range | Must be 0–100 (or null) | Relative humidity is a percentage by definition (ratio of actual to saturation vapor pressure) -- any value outside 0–100 is physically meaningless, regardless of data source |
-| `precipitation_probability` range | Must be 0–100 (or null) | Same reasoning -- it's documented as a percentage. Null is allowed |
-| `precipitation` / `rain` / `showers` / `snowfall` / `snow_depth` non-negative | Must be ≥ 0 (or null) | These are physical quantities (mm of water/snow) -- a negative amount is meaningless |
-| Cross-field consistency | `precipitation ≈ rain + showers + snowfall / 7` | Precipitation is defined as *"rain + showers + snow"*. The `/7` matters: per Open-Meteo's docs, `snowfall` is in **cm** while `precipitation`/`rain`/`showers` are in **mm** -- dividing by 7 converts snowfall to its water-equivalent in mm before summing. Missing this unit mismatch would make the check fail on every hour with real snowfall |
-| No duplicate `(venue_id, datetime)` | Each hour, once per venue | Already enforced by the `UNIQUE(venue_id, datetime)` constraint (which is also what makes the upsert idempotent) -- this check reproves it independently in SQL rather than only trusting the constraint blindly |
+| `relative_humidity_2m` range | Must be 0–100 (or null) | Relative humidity is a percentage by definition (ratio of actual to saturation vapor pressure) - any value outside 0–100 is physically meaningless, regardless of data source |
+| `precipitation_probability` range | Must be 0–100 (or null) | Same reasoning - it's documented as a percentage. Null is allowed |
+| `precipitation` / `rain` / `showers` / `snowfall` / `snow_depth` non-negative | Must be ≥ 0 (or null) | These are physical quantities (mm of water/snow) - a negative amount is meaningless |
+| Cross-field consistency | `precipitation ≈ rain + showers + snowfall / 7` | Precipitation is defined as *"rain + showers + snow"*. The `/7` matters: per Open-Meteo's docs, `snowfall` is in **cm** while `precipitation`/`rain`/`showers` are in **mm** - dividing by 7 converts snowfall to its water-equivalent in mm before summing. Missing this unit mismatch would make the check fail on every hour with real snowfall |
+| No duplicate `(venue_id, datetime)` | Each hour, once per venue | Already enforced by the `UNIQUE(venue_id, datetime)` constraint (which is also what makes the upsert idempotent) - this check reproves it independently in SQL rather than only trusting the constraint blindly |
 | No orphaned `venue_id` | Every `weather.venue_id` must exist in `venue` | Already enforced by the `FOREIGN KEY` constraint -- same reasoning|
 
